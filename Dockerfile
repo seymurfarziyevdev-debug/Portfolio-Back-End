@@ -1,39 +1,42 @@
 FROM php:8.1-apache
 
-# Lazımlı paketləri quraşdır
-RUN apt-get update && apt-get install -y unzip git curl libzip-dev zip \
-    && docker-php-ext-install pdo_mysql zip
+# Gerekli paketleri yükle
+RUN apt-get update && apt-get install -y unzip git curl libzip-dev zip libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql zip
 
-# Composer yüklə
+# Composer'ı kopyala
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Laravel kodunu qovluğa kopyala
+# Projeyi kopyala
 COPY . /var/www/html/
 
-# Composer install işlət (vendor qovluğunu yaratmaq üçün)
+# .env dosyasını oluştur
+RUN cp /var/www/html/.env.example /var/www/html/.env
+
+# Composer install
 RUN composer install --no-dev --optimize-autoloader --working-dir=/var/www/html
 
-# Public folderi root kimi göstər
+# Laravel APP_KEY üret
+RUN php /var/www/html/artisan key:generate
+
+# Cache temizle ve oluştur
+RUN php /var/www/html/artisan config:clear \
+    && php /var/www/html/artisan cache:clear \
+    && php /var/www/html/artisan config:cache
+
+# Apache document root
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
-# Apache konfiqurasiya
-RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Apache ayarları
+RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Apache mod rewrite aktiv et
+# mod_rewrite aktif et
 RUN a2enmod rewrite
 
-# Laravel permission (opsional)
-
-RUN mkdir -p storage/framework/sessions storage/framework/cache storage/framework/views storage/logs && \
-    chown -R www-data:www-data storage bootstrap/cache && \
-    chmod -R 775 storage bootstrap/cache
-
+# Laravel izin ayarları
+RUN mkdir -p storage/framework/sessions storage/framework/cache storage/framework/views storage/logs \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
-
-RUN apt-get update && apt-get install -y libpq-dev
-
-
-RUN docker-php-ext-install pdo_pgsql
-
