@@ -19,6 +19,8 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 # Apache konfiqurasiya
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN mkdir -p /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/bootstrap/cache
 
 # Apache mod rewrite aktiv et
 RUN a2enmod rewrite
@@ -28,7 +30,6 @@ RUN a2enmod rewrite
 RUN mkdir -p storage/framework/sessions storage/framework/cache storage/framework/views storage/logs && \
     chown -R www-data:www-data storage bootstrap/cache && \
     chmod -R 775 storage bootstrap/cache
-
 
 EXPOSE 80
 
