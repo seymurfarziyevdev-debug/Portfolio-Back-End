@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
@@ -66,17 +67,23 @@ class ProjectController extends Controller
         return response()->json($project);
     }
 
+
+
     public function destroy($id)
     {
         $project = Project::findOrFail($id);
 
-        // Şəkli sil
-        if ($project->image_path && file_exists(public_path($project->image_path))) {
-            unlink(public_path($project->image_path));
+        if ($project->image_path) {
+            try {
+                Storage::disk('public')->delete($project->image_path);
+            } catch (\Throwable $e) {
+                \Log::warning("Dosya silinirken hata: " . $e->getMessage());
+            }
         }
 
         $project->delete();
 
         return response()->json(null, 204);
     }
+
 }
