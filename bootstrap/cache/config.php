@@ -433,7 +433,7 @@
   ),
   'jwt' => 
   array (
-    'secret' => NULL,
+    'secret' => 'X033JAC9IwANCUseqGQFETqDM1skCPOIqIsdvumRheYlxle11xJy8dhs7GlsEw83',
     'keys' => 
     array (
       'public' => NULL,
